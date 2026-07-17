@@ -1,4 +1,4 @@
-FILE_PICKER = "LastChristmas" 
+FILE_PICKER = "milk" 
 AUDIO_FILE = f"music_procesing/wave/{FILE_PICKER}.wav" 
 #AUDIO_FILE = "wave/milk.wav"
 #AUDIO_FILE = "wave/LastChristmas.wav"
