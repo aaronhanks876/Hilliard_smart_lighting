@@ -6,7 +6,7 @@
 #define USE_SERIAL  Serial
 // pins have been switched for box 1 (yash stupiffd)
 #define outputPin  5 
-#define zerocross  12 // for boards with CHANGEBLE input pins  
+#define zerocross  14 // for boards with CHANGEBLE input pins  
 
 dimmerLamp dimmer(outputPin, zerocross);
 
@@ -22,8 +22,8 @@ const char *mqtt_broker = "192.168.60.6";  // EMQX broker endpoint
 const char *mqtt_topic = "lights/AC/box1";     // Needs to be changed with box number
 const char *will_topic = "lights/AC/box1/connection"; // Needs to be changed with box number
 
-const char *mqtt_username = "emqx";  // MQTT username for authentication
-const char *mqtt_password = "public";  // MQTT password for authentication
+const char *mqtt_username = "AC1";  // MQTT username for authentication
+const char *mqtt_password = "HilliardAC#1";  // MQTT password for authentication
 const int mqtt_port = 1883;  // MQTT port (TCP)
 
 WiFiClient espClient;
