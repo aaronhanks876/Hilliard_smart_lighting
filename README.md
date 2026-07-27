@@ -18,7 +18,7 @@ Password: HilliardMusicBox
 
 ## Other Usernames and Passwords
 ### Node-RED Admin Account
-Username: intern
+Username: intern  
 Password: Nut-3nact-D3pict!
 ### Node-RED UI/User Account
 Username: Hilliard  
