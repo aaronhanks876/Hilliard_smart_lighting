@@ -5,8 +5,8 @@
 // ==========================================
 // 1. SYSTEM CONFIGURATION & HARDWARE SETTINGS
 // ==========================================
-#define NUM_LEDS 144              // Total physical LED count
-#define LEDS_PER_SEGMENT 48      // Desired number of LEDs per segment
+#define NUM_LEDS 194            // Total physical LED count
+#define LEDS_PER_SEGMENT 10      // Desired number of LEDs per segment
 #define DATA_PIN 4                // Pin output to LED strip data line
 
 // Non-blocking Animation Limits
@@ -184,8 +184,8 @@ void drawPatterns(int pulseIndex, int distance) {
       setLedSafe(centerPos - distance, rainbowColor);
     } 
     else if (drawColor == CRGB(255,255,255)) {
-      CRGB rightColor = (distance % 2 == 0) ? CRGB::Red : CRGB::Green;
-      CRGB leftColor  = (distance % 2 == 0) ? CRGB::Green : CRGB::Red;
+      CRGB rightColor = (distance % 2 == 0) ? CRGB::Red : CRGB::Lime;
+      CRGB leftColor  = (distance % 2 == 0) ? CRGB::Lime : CRGB::Red;
       setLedSafe(centerPos + distance, rightColor);
       setLedSafe(centerPos - distance, leftColor);
     } 
@@ -282,17 +282,12 @@ void handleModeMessage(String message) {
   else if (message == "5")  spawnPulse(CRGB::White);
   else if (message.substring(0, 3) = "{\"h"){ //inputting custom colors from node-RED in this format: hsv(hue, saturation%, value%)
     message = message.substring(5);
-    Serial.println(message);
     int firstCommaIndex = message.indexOf(",");
     customColor[0] = message.substring(0, firstCommaIndex).toInt() * 255 / 360;
-    Serial.println(customColor[0]);
     message = message.substring(firstCommaIndex + 5);
-    Serial.println(message);
     int secondCommaIndex = message.indexOf(",");
     customColor[1] = message.substring(0, secondCommaIndex).toInt() * 255 / 100;
-    Serial.println(customColor[1]);
     customColor[2] = message.substring(secondCommaIndex + 5, message.length() - 1).toInt() * 255 / 100;
-    Serial.println(customColor[2]);
     spawnPulse(CRGB::Brown); //temporary color that we WILL NOT USE for anything else (it crashes the ESP if we dont do this)
   }
 }
@@ -300,12 +295,13 @@ void handleModeMessage(String message) {
 
 void handleSpeedMessage(String message) {
   int parsedSpeed = message.toInt(); // Fixed: safely parses numeric text value strings
+  parsedSpeed = 50 - parsedSpeed / 2;
   ledSpeed = parsedSpeed;
 }
 
 void handleBrightnessMessage(String message) {
   int parsedBrightness = message.toInt();
-  if (parsedBrightness >= 0 && parsedBrightness <= 255) {
+  if (parsedBrightness >= 0 && parsedBrightness <= 100) {
     currentBrightness = parsedBrightness;
     FastLED.setBrightness(currentBrightness); // Refreshes global hardware matrix registers
   }
