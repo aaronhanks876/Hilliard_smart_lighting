@@ -39,7 +39,7 @@ def main():
     mqtt_client = connect_mqtt()
 
     # Audio engine
-    audio = AudioStream(AUDIO_FILE, WINDOW_SIZE, AUDIO_DELAY_SECONDS)
+    audio = AudioStream(WINDOW_SIZE)
 
     # FFT analyzer
     analyzer = FFTAnalyzer(audio.sample_rate, WINDOW_SIZE)
