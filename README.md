@@ -23,3 +23,11 @@ Password: Nut-3nact-D3pict!
 ### Node-RED UI/User Account
 Username: Hilliard  
 Password: Sm3lls-Lik3-Sad!
+# System Explanation  
+## Music Processing
+## MQTT
+### Broker
+### Node-RED
+Node-RED is used to provide a user interface to control various settings for the lighting boxes. 
+## RGB Lighting Control Boxes  
+## AC Lighting Control Boxes
