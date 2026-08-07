@@ -55,13 +55,25 @@ Node-RED is run on the Raspberry PI, and is used to provide a user interface to 
       - Flash
   - RGB
     - On/off control of RGB boxes
+  - Testing
+    - Has a button to send a test signal to the lights
 - Status
   - A/C Box Status
     - Shows the connection status of all A/C boxes
   - SPEAKER STATUS?
   - RGB Box Status
-    - Shows the connection status of all RGB boxes 
-
+    - Shows the connection status of all RGB boxes
+  - Number of Boxes Online
+    - A dial that shows the amount of boxes that are online
+  - Testing
+    - Has a button to send a test signal to the lights
+- Advanced Controls
+  - RGB Color Pickers
+    - HSV color pickers for each individual box
+  - RGB Modes
+    - Mode selectors for each individual box
+  - RGB Advanced Controls
+    - Toggles to turn on or off advanced controls for each individual box
   
 ## RGB Lighting Control Boxes  
 The RGB lighting control boxes (RGB boxes) are stored inside waterproof boxes, and comprised of one ESP32 microcontroller to run the code, a 5V power supply to power the ESP32, and an RGB connection cable.
