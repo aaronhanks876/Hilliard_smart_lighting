@@ -117,7 +117,12 @@ The UI is built using the UIBUILDER Node-RED addon. Through these nodes the diff
     - Has a button to send a test signal to the lights
   
 ## RGB Lighting Control Boxes  
-The RGB lighting control boxes (RGB boxes) are stored inside waterproof boxes, and comprised of one ESP32 microcontroller to run the code, a 5V power supply to power the ESP32, and an RGB connection cable.
+The RGB lighting control boxes (RGB boxes) are stored inside waterproof boxes, and comprised of one ESP32 microcontroller to run the code, a 5V power supply to power the ESP32, and an RGB connection cable.  
+  
+<img src="/LightingBoxImages/RGBBox.jpg" width="300"> 
+
 ## A/C Lighting Control Boxes
-The A/C lighting control boxes (A/C boxes) are designed to have six outlets to connect to one large Christmas tree. They are comprised of one ESP8266 microcontroller, three programmable A/C PWM dimmers, one 5V power supply, and six outlets. The ESP8266 controls the three dimmers, each of which outputs the controlled power to two outlets.
+The A/C lighting control boxes (A/C boxes) are designed to have six outlets to connect to one large Christmas tree. They are comprised of one ESP8266 microcontroller, three programmable A/C PWM dimmers, one 5V power supply, and six outlets. The ESP8266 controls the three dimmers, each of which outputs the controlled power to two outlets.  
+
+<img src="/LightingBoxImages/ACBox.jpg" width="300">
 
