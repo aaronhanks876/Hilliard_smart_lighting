@@ -1,9 +1,10 @@
-# Hilliard Smart Lighting
+# Hilliard Smart Lighting 
+
 ## Rasperry PI IP address:
 192.168.60.6
 ## MQTT Usernames and Passwords
 ### RGB boxes:
-n = the number of the box  
+n = the number of the box   
 Username: RGBn  
 Password: HilliardRGB#n
 ### AC boxes:
@@ -23,10 +24,25 @@ Password: Nut-3nact-D3pict!
 ### Node-RED UI/User Account
 Username: Hilliard  
 Password: Sm3lls-Lik3-Sad!
+
 # System Explanation  
+Written here is a brief explanation of the flow of the system, followed by more in depth explanations of each individual part of the system.
+The system works in 4 major steps:
+1. Audio is played on a computer with a pyapp installed to run the music processing. The app reads the system audio and runs a fast fourier transform to seperate the audio into frequencies. The app can then analyze different frequency ranges (bass, treble, and mid) and send out a trigger when they cross a certain threshold (80%, for example).
+2. The trigger signal is sent to the MQTT broker, and is redirected to Node-RED, which runs the user interface for lighting control
+3. A lighting control signal determined by configuration in the user interface is sent to the broker by Node-RED, and is redirected to the individual lighting boxes.
+4. The individual boxes receive their instructions and flash accordingly
 ## Music Processing
 ## MQTT
+MQTT is the protocol used for the sending of control signals in the reactive lighting system.
 ### Topics
+The different parts of the system are organized into various topics:
+| **/lights** | **/lights/RGB** | **/lights/RGB/boxn** | **/lights/RGB/boxn/connection** | **/lights/RGB/brightness** | **/lights/RGB/speed** |
+| :-: | :-: | :-: | :-: | :-: | :-: |
+| Where trigger signals from the music processing are sent | An organizational topic | Where the light controls for each individual RGB box (of number n) are sent | Where connection and disconnection messages from each individual RGB box (of number n) are sent | Where brightness controls for RGB boxes are sent | Where speed controls for RGB boxes are sent |
+|             | **/lights/AC**  | **/lights/AC/boxn**  | **/lights/AC/boxn/connection**  |                            |                       |
+|             | An organizational topic | Where the light controls for each individual AC box (of number n) are sent | where connection and disconnection messages from each individual AC box (of number n) are sent | | |
+
 ### Broker
 The MQTT broker is run by Mosquitto on a Raspberry PI 
 ### Node-RED
@@ -46,10 +62,16 @@ The UI is built using the UIBUILDER Node-RED addon. Through these nodes the diff
   6. Both regular and advanced mode switches check if the mode is set to custom. They then send to either the mode changer, or the custom color changer for their respective complexity.
   7. Both changers will change the "mode" part of the message payload into the mode set in the UI. The color changer will send an HSV value, and the mode will send a value from 1-5. If this is the advanced mode, it will be specific to that box. If it is regular mode, it will be the generalized mode.
   8. The resulting messages payload is sent to an MQTT node which publishes to the proper topic for their respective box.
-- The RGB speed and brightness sliders both send the result directly onto their respective topics, which are read by the boxes.
-- The RGB connection
+- The RGB speed and brightness sliders both send the result directly onto their respective topics, which are read by the RGB boxes.
+- The RGB connection works by setting the connection status when a given box sends a connection or disconnection message. 
 ##### AC
-
+- The AC code is far simpler than the RGB code, because it does not have advanced controls to control the individual boxes. It works in four phases instead of eight.
+  1. The code receives a trigger from an MQTT node (the contents of the signal do not matter)
+  2. FINISH THIS LATER
+##### Broker
+- The connection display works by giving each box a number variable for its connection. If it is connected, then it is a one, and if it is not connected, then it is a 0. All these variable are summed and displayed in a gauge in the user interface
+- Test lights buttons work by using an MQTT node to send a signal to the same topic the music processing code sends signals on.
+  
 #### List of Utilities
 - Controls
   - A/C
