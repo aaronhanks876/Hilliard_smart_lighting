@@ -1,5 +1,5 @@
 # Hilliard Smart Lighting 
-
+   
 ## Rasperry PI IP address:
 192.168.60.6
 ## MQTT Usernames and Passwords
@@ -38,7 +38,7 @@ MQTT is the protocol used for the sending of control signals in the reactive lig
 ### Topics
 The different parts of the system are organized into various topics:
 | **/lights** | **/lights/RGB** | **/lights/RGB/boxn** | **/lights/RGB/boxn/connection** | **/lights/RGB/brightness** | **/lights/RGB/speed** |
-| :-: | :-: | :-: | :-: | :-: | :-: |
+| :---------: | :-------------: | :------------------: | :-----------------------------: | :------------------------: | :-------------------: |
 | Where trigger signals from the music processing are sent | An organizational topic | Where the light controls for each individual RGB box (of number n) are sent | Where connection and disconnection messages from each individual RGB box (of number n) are sent | Where brightness controls for RGB boxes are sent | Where speed controls for RGB boxes are sent |
 |             | **/lights/AC**  | **/lights/AC/boxn**  | **/lights/AC/boxn/connection**  |                            |                       |
 |             | An organizational topic | Where the light controls for each individual AC box (of number n) are sent | where connection and disconnection messages from each individual AC box (of number n) are sent | | |
