@@ -1,32 +1,47 @@
 #include <FastLED.h>
 #include <WiFi.h> 
 #include <PubSubClient.h>
+#include "time.h"
+#include <ESP32Time.h>
+#include "millisDelay.h"
+
 
 // ==========================================
 // 1. SYSTEM CONFIGURATION & HARDWARE SETTINGS
 // ==========================================
-#define NUM_LEDS 194            // Total physical LED count
+#define NUM_LEDS 100           // Total physical LED count
 #define LEDS_PER_SEGMENT 10      // Desired number of LEDs per segment
 #define DATA_PIN 4                // Pin output to LED strip data line
 
 // Non-blocking Animation Limits
-#define MAX_PULSES 15             // Maximum simultaneous tracked active pulses
+#define MAX_PULSES 15            // Maximum simultaneous tracked active pulses
 
 // Network Credentials
-const char *ssid          = "HCL Interns"; 
-const char *password      = "Interns123!"; 
+const char* ssid = "HCL Interns";
+const char* password = "Interns123!";
 
 // MQTT Broker Settings
 const char *mqtt_broker   = "192.168.60.6"; 
 const int   mqtt_port     = 1883;           
-const char *mqtt_username = "RGB1";         
-const char *mqtt_password = "HilliardRGB#1"; 
+const char *mqtt_username = "RGB1"; //Change with box #        
+const char *mqtt_password = "HilliardRGB#1"; //Change with box #   
 
 // Topic Subscriptions
-const char *mqtt_topic        = "lights/RGB/box1"; 
+const char *mqtt_topic        = "lights/RGB/box1"; //Change with box #   
 const char *speed_topic       = "lights/RGB/speed";
 const char *brightness_topic  = "lights/RGB/brightness";
-const char *will_topic        = "lights/RGB/box1/connection"; 
+const char *will_topic        = "lights/RGB/box1/connection"; //Change with box #   
+
+// Time Stuffs
+ESP32Time rtc(0);
+const char* ntpServer = "pool.ntp.org";
+unsigned long Epoch_Time; 
+unsigned long New_Epoch_Time;
+
+String delayBacklog[] = {"-1", "-1", "-1", "-1", "-1"};
+String triggerBacklog[] = {"-1", "-1", "-1", "-1", "-1"};
+int backlogCount = 0;
+int executeCount = 0;
 
 bool invertRedGreen = true; //switch red and green (seed lights)
 //bool invertRedGreen = false; //(LED strip lights)
@@ -86,7 +101,6 @@ void updateAnimations();
 // ==========================================
 void setup() {
   Serial.begin(9600);
-  delay(1000); 
   
   // FastLED Setup
   if (invertRedGreen){ // inverted RGB setup
@@ -116,6 +130,17 @@ void setup() {
   mqtt_client.setServer(mqtt_broker, mqtt_port);
   mqtt_client.setCallback(mqttCallback); // Pointing library to unified routing gate
   connectToMQTTBroker();
+  // Time syncing
+  configTime(0, 0, ntpServer);
+  Epoch_Time = Get_Epoch_Time() + 1; 
+  New_Epoch_Time = Get_Epoch_Time();
+  while (New_Epoch_Time != Epoch_Time){//breaks the loop when the second "ticks over"
+    delay(1);
+    New_Epoch_Time = Get_Epoch_Time();
+  }
+  Serial.println("Time set");
+  rtc.setTime(New_Epoch_Time);
+  Serial.println("Setup Complete");
 }
 
 
@@ -132,8 +157,7 @@ void loop() {
     connectToMQTTBroker();
   }
   mqtt_client.loop(); 
-
-  // Process Animation Frames
+  processDelays();
   unsigned long currentTime = millis();
   if (currentTime - lastFrameTime >= (unsigned long)ledSpeed) {
     lastFrameTime = currentTime;
@@ -253,6 +277,17 @@ void setLedSafe(int index, CRGB color) {
 // 7. NETWORK & COMMUNICATIONS PROTOCOLS
 // ==========================================
 
+unsigned long Get_Epoch_Time() {
+  time_t now;
+  struct tm timeinfo;
+  if (!getLocalTime(&timeinfo)) {
+    return(0);
+  }
+  time(&now);
+  return now;
+}
+
+
 // UNIFIED HANDLER: Receives ALL topic payloads and filters them by string matching
 void mqttCallback(char *topic, byte *payload, unsigned int length) {
   String message;
@@ -275,29 +310,50 @@ void mqttCallback(char *topic, byte *payload, unsigned int length) {
 
 
 void handleModeMessage(String message) {
-  if (message == "1")       spawnPulse(CRGB::DarkOrange);
-  else if (message == "2")  spawnPulse(CRGB::DarkGreen);
-  else if (message == "3")  spawnPulse(CRGB::BlueViolet);
-  else if (message == "4")  spawnPulse(CRGB::Black); 
-  else if (message == "5")  spawnPulse(CRGB::White);
-  else if (message.substring(0, 3) = "{\"h"){ //inputting custom colors from node-RED in this format: hsv(hue, saturation%, value%)
-    message = message.substring(5);
-    int firstCommaIndex = message.indexOf(",");
-    customColor[0] = message.substring(0, firstCommaIndex).toInt() * 255 / 360;
-    message = message.substring(firstCommaIndex + 5);
-    int secondCommaIndex = message.indexOf(",");
-    customColor[1] = message.substring(0, secondCommaIndex).toInt() * 255 / 100;
-    customColor[2] = message.substring(secondCommaIndex + 5, message.length() - 1).toInt() * 255 / 100;
-    spawnPulse(CRGB::Brown); //temporary color that we WILL NOT USE for anything else (it crashes the ESP if we dont do this)
+  int delayMs = message.substring(message.length() - 5).toInt();  
+  delayBacklog[backlogCount] = delayMs;
+  triggerBacklog[backlogCount] = message;
+  backlogCount ++;
+  if(backlogCount == 5){
+    backlogCount = 0;
   }
 }
-//{"h":205.20000000000002,"s":49,"v":100}
+
+void processDelays(){
+  for (int i = 0; i < 5; i ++){
+    if (triggerBacklog[i].equals("-1")){
+      continue;
+    }
+    unsigned long currentMillis = rtc.getMillis();
+    if (abs(delayBacklog[i].toInt() - currentMillis) % 1000 < 50){
+      if (triggerBacklog[i].substring(0, 1) == "1")       spawnPulse(CRGB::DarkOrange);
+      else if (triggerBacklog[i].substring(0, 1) == "2")  spawnPulse(CRGB::DarkGreen);
+      else if (triggerBacklog[i].substring(0, 1) == "3")  spawnPulse(CRGB::BlueViolet);
+      else if (triggerBacklog[i].substring(0, 1) == "4")  spawnPulse(CRGB::Black); 
+      else if (triggerBacklog[i].substring(0, 1) == "5")  spawnPulse(CRGB::White);
+      else if (triggerBacklog[i].substring(0, 3) = "{\"h"){ //inputting custom colors from node-RED in this format: {"h":205.20000000000002,"s":49,"v":100}
+        String shortenedMessage = triggerBacklog[i].substring(5);
+        int firstCommaIndex = shortenedMessage.indexOf(",");
+        customColor[0] = shortenedMessage.substring(0, firstCommaIndex).toInt() * 255 / 360;
+        shortenedMessage = shortenedMessage.substring(firstCommaIndex + 5);
+        int secondCommaIndex = shortenedMessage.indexOf(",");
+        customColor[1] = shortenedMessage.substring(0, secondCommaIndex).toInt() * 255 / 100;
+        customColor[2] = shortenedMessage.substring(secondCommaIndex + 5, shortenedMessage.length() - 1).toInt() * 255 / 100;
+        spawnPulse(CRGB::Brown); //temporary color that we WILL NOT USE for anything else (it crashes the ESP if we dont do this)
+      }
+      triggerBacklog[i] = "-1";
+      delayBacklog[i] = "-1";
+    }
+    delay(1);
+  }
+}
 
 void handleSpeedMessage(String message) {
   int parsedSpeed = message.toInt(); // Fixed: safely parses numeric text value strings
   parsedSpeed = 50 - parsedSpeed / 2;
   ledSpeed = parsedSpeed;
 }
+
 
 void handleBrightnessMessage(String message) {
   int parsedBrightness = message.toInt();
@@ -333,3 +389,6 @@ void connectToMQTTBroker() {
     }
   }
 }
+
+
+
