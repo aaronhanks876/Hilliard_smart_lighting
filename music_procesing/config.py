@@ -4,6 +4,8 @@
 
 # Audio capture
 
+SPEAKER_NAME = None  # Use Windows default
+
 WINDOW_SIZE = 1024
 
 # MQTT
@@ -16,13 +18,13 @@ MQTT_PASSWORD = "HilliardMusicBox"
 # Processing
 
 SMOOTHING = 0.7
-BEAT_SENSITIVITY = 1.8
+BEAT_SENSITIVITY = 2.2
 # config.py
 
 # Audio capture
 
 LOOPBACK_DEVICE = 2   # Change this to your loopback device index
-WINDOW_SIZE = 2048
+WINDOW_SIZE = 1024
 
 # MQTT
 

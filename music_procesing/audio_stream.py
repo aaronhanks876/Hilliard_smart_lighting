@@ -1,6 +1,18 @@
 # audio_stream.py
 
+from config import SPEAKER_NAME
 import soundcard as sc
+
+if SPEAKER_NAME is None:
+    speaker = sc.default_speaker()
+else:
+    speaker = sc.get_speaker(SPEAKER_NAME)
+
+loopback = sc.get_microphone(
+    id=speaker.id,
+    include_loopback=True
+)
+
 import numpy as np
 import queue
 import threading
