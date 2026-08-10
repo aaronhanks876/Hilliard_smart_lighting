@@ -46,7 +46,12 @@ The different parts of the system are organized into various topics:
 ### Broker
 The MQTT broker is run by Mosquitto on a Raspberry PI 
 ### Node-RED
-Node-RED provides configuration of the lights. It runs the user interface, which is hosted by a Raspberry PI alongside the code itself. The code menu can be accessed by entering the ip of the Raspberry PI alongside the 1880 port into the search bar: "(IP address):1880". The UI can be accessed by typing in the same address alongside "/ui": "(IP address):1880/ui"
+Node-RED provides configuration of the lights. It runs the user interface, which is hosted by a Raspberry PI alongside the code itself. The code menu can be accessed by entering the ip of the Raspberry PI alongside the 1880 port into the search bar: "(IP address):1880". The UI can be accessed by typing in the same address alongside "/ui": "(IP address):1880/ui"  
+  
+<img src="LightingBoxImages/Node-REDControls.png" width="500">  
+<img src="LightingBoxImages/Node-REDStatus.png" width="500">  
+<img src="LightingBoxImages/Node-REDAdvanced.png" width="500">  
+
 #### Code Explanation
 ##### Overview
 The Node-RED code works by receiving some input signal from the MQTT broker, sequentially checking all of the settings configured in the UI, and outputting the appropriate signal to send to the boxes. 
