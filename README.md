@@ -126,8 +126,54 @@ The RGB lighting control boxes (RGB boxes) are stored inside waterproof boxes, a
   
 <img src="/LightingBoxImages/RGBBox.jpg" width="300"> 
 
+RGB
+
+In setup() the code starts by checking to see what protocol the lights follow (RGB or GRB), then caclulates collison distances and defines the centers, next the all the LEDs are set to black, the code will run connectToWifi(), then setup the MQTT connection, lastly the code will sync up the ESPs time with time from pool.ntp.org
+
+loop() tries to reconnect to the server if the connection is lost, loops through mqtt_client_loop(), runs through processDelays() to push through the backlog, and check to see if the LEDs need to be updated based on the system clock.
+
+updateAnimations() essentailly runs the pulses, pushing the lit LED outwards untill the collision distance.
+
+drawPatterns() defines what each of the colorModes do (how they fade/change over the strip)
+
+spawnPulse() loops through all of pulsePositions[] and if any of them are set to -1 (inactive) then it will be set to the targetColor
+
+setLedSafe() sets LEDs, but only when they actually exist, preventing weird errors
+
+Get_Epoch_Time requests the current time from the internet to the second
+
+mqttCallback() handles the incoming messages, and adds them to the backlog with their timestamp
+
+handleModeMessage() adds triggers and delays to the backlog arrays in indexes 0-4, if it runs out of space, it overwrites the begining of the arrays
+
+processDelays() loops though all 5 elements of the triggerBacklog, if an element = -1 (empty), it is skipped, otherwise it will then check the countdown with currentMillis and delayBacklog[i], if the last 3 digits of their difference is less then the threshhold (100), that trigger will play on the lights, afterwards that element is removed from the backlog arrays
+
+handleSpeedMessage() updates the speed with a scaled number recived from MQTT
+
+handleBrightnessMessage() updates the brightness
+
+connectToWifi() loops until the network is connected, then prints "Connected to the WiFi network".
+
+connectToMQTTBroker() loops until the broker is connected, in this loop the "death message" is set to "Disconnected", the topics are subscribed to, and the message "Connected" is published.
+
 ## A/C Lighting Control Boxes
 The A/C lighting control boxes (A/C boxes) are designed to have six outlets to connect to one large Christmas tree. They are comprised of one ESP8266 microcontroller, three programmable A/C PWM dimmers, one 5V power supply, and six outlets. The ESP8266 controls the three dimmers, each of which outputs the controlled power to two outlets.  
 
 <img src="/LightingBoxImages/ACBox.jpg" width="300">
+
+A/C
+
+In setup() the code starts by initializing three dimmerLamp objects, each corresponding to a physical dimmer, the next step is to connect to WIFI with connectToWifi(), finishing out by setting up the MQTT connection over three functions
+
+connectToWifi() loops until the network is connected, then prints "Connected to the WiFi network".
+
+connectToMQTTBroker() loops until the broker is connected, in this loop the "death message" is set to "Disconnected", the topics are subscribed to, and the message "Connected" is published.
+
+mqttCallback() handles the incoming messages, then based on the number sent, different mode functions are activated.
+
+mode1() rapidly raises the brightness to 100 then lowers it to the variable twinkleMap (set to 55), making the lights "twinkle."
+
+mode2() rapidly raises the brightness to 100 then lowers it to the variable flashMap (set to 30), making the lights "flash."
+
+loop() tries to reconnect to the server if the connection is lost, and loops through mqtt_client_loop()
 
