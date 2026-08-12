@@ -70,9 +70,13 @@ The UI is built using the UIBUILDER Node-RED addon. Through these nodes the diff
 - The RGB speed and brightness sliders both send the result directly onto their respective topics, which are read by the RGB boxes.
 - The RGB connection works by setting the connection status when a given box sends a connection or disconnection message. 
 ##### AC
-- The AC code is far simpler than the RGB code, because it does not have advanced controls to control the individual boxes. It works in four phases instead of eight.
+- The AC code is far simpler than the RGB code, because it does not have advanced controls to control the individual boxes. It works in five phases instead of eight.
   1. The code receives a trigger from an MQTT node (the contents of the signal do not matter)
-  2. FINISH THIS LATER
+  2. The trigger is sent to two different switches (one for each box), each of which checks if its assigned box is on
+  3. The trigger is sent through a change node, and is changed into the number for the mode set in the UI
+  4. The message is sent through a delay node, which delays it so that it will be in sync with the RGB boxes
+  5. The message is sent to an MQTT node which publishes to the proper topic for its assigned box
+- AC connection status works in the same way as RGB connection status
 ##### Broker
 - The connection display works by giving each box a number variable for its connection. If it is connected, then it is a one, and if it is not connected, then it is a 0. All these variable are summed and displayed in a gauge in the user interface
 - Test lights buttons work by using an MQTT node to send a signal to the same topic the music processing code sends signals on.
@@ -124,56 +128,95 @@ The UI is built using the UIBUILDER Node-RED addon. Through these nodes the diff
 ## RGB Lighting Control Boxes  
 The RGB lighting control boxes (RGB boxes) are stored inside waterproof boxes, and comprised of one ESP32 microcontroller to run the code, a 5V power supply to power the ESP32, and an RGB connection cable.  
   
-<img src="/LightingBoxImages/RGBBox.jpg" width="300"> 
+<img src="/LightingBoxImages/RGBBox.jpg" width="300">  
 
-RGB
+### ESP32 Code explanation
 
-In setup() the code starts by checking to see what protocol the lights follow (RGB or GRB), then caclulates collison distances and defines the centers, next the all the LEDs are set to black, the code will run connectToWifi(), then setup the MQTT connection, lastly the code will sync up the ESPs time with time from pool.ntp.org
+`setup()`
+- Checks to see what protocol the lights follow (RGB or GRB)
+- Calculates the center and end points (collision distances) of each pulse
+- Sets all the LEDs to black
+- Runs `connectToWifi()`
+- Sets up the MQTT connection
+- Syncs up the ESP's internal clock with time from pool.ntp.org.
 
-loop() tries to reconnect to the server if the connection is lost, loops through mqtt_client_loop(), runs through processDelays() to push through the backlog, and check to see if the LEDs need to be updated based on the system clock.
+`loop()` 
+- Tries to reconnect to the server if the connection is lost
+- Loops through mqtt_client_loop()
+- Runs through `processDelays()` to push through the backlog
+- Checks to see if the LEDs need to be updated based on the system clock.
 
-updateAnimations() essentailly runs the pulses, pushing the lit LED outwards untill the collision distance.
+`updateAnimations() `
+- Runs the pulses, pushing the lit LED outwards until the collision distance
 
-drawPatterns() defines what each of the colorModes do (how they fade/change over the strip)
+`drawPatterns()`
+- Defines what each of the `colorModes` do (how they fade/change over the strip)
 
-spawnPulse() loops through all of pulsePositions[] and if any of them are set to -1 (inactive) then it will be set to the targetColor
+`spawnPulse()`
+- Loops through all of `pulsePositions[]` and sets those that are equal to -1 (inactive) to the `targetColor`
 
-setLedSafe() sets LEDs, but only when they actually exist, preventing weird errors
+`setLedSafe()` 
+- Sets LEDs, but only when they actually exist, preventing errors
 
-Get_Epoch_Time requests the current time from the internet to the second
+`Get_Epoch_Time` 
+- Requests the current time from the internet to the second
 
-mqttCallback() handles the incoming messages, and adds them to the backlog with their timestamp
+`mqttCallback()` 
+- Handles the incoming messages, and adds them to the backlog with their timestamp
 
-handleModeMessage() adds triggers and delays to the backlog arrays in indexes 0-4, if it runs out of space, it overwrites the begining of the arrays
+`handleModeMessage()` 
+- Adds triggers and delays to the backlog arrays in indexes 0-4, overwriting the beginning of the arrays if it runs out of space
 
-processDelays() loops though all 5 elements of the triggerBacklog, if an element = -1 (empty), it is skipped, otherwise it will then check the countdown with currentMillis and delayBacklog[i], if the last 3 digits of their difference is less then the threshhold (100), that trigger will play on the lights, afterwards that element is removed from the backlog arrays
+`processDelays()`
+- Loops though all 5 elements of the `triggerBacklog` (the array holding the modes for signals), skipping elements that are equal to -1 (empty)
+- Checks the `delayBacklog` (the array holding the time of execution for signals) of elements that are not equal to -1 with `currentMillis` (the current time), triggering the lights if the difference of their last 3 digits is less than the threshold (100), and removing the element from the backlog arrays
 
-handleSpeedMessage() updates the speed with a scaled number recived from MQTT
+`handleSpeedMessage()`
+- Updates the speed with a scaled number received from MQTT
 
-handleBrightnessMessage() updates the brightness
+`handleBrightnessMessage()`
+- Updates the brightness
 
-connectToWifi() loops until the network is connected, then prints "Connected to the WiFi network".
+`connectToWifi()`
+- Loops until the network is connected, then prints "Connected to the WiFi network"
 
-connectToMQTTBroker() loops until the broker is connected, in this loop the "death message" is set to "Disconnected", the topics are subscribed to, and the message "Connected" is published.
+`connectToMQTTBroker()`
+- Loops until the broker is connected
+- Sets the "death message" to "Disconnected"
+- Subscribes to topics 
+- Publishes the "Connected" message
 
 ## A/C Lighting Control Boxes
 The A/C lighting control boxes (A/C boxes) are designed to have six outlets to connect to one large Christmas tree. They are comprised of one ESP8266 microcontroller, three programmable A/C PWM dimmers, one 5V power supply, and six outlets. The ESP8266 controls the three dimmers, each of which outputs the controlled power to two outlets.  
 
 <img src="/LightingBoxImages/ACBox.jpg" width="300">
 
-A/C
+### ESP8266 Code Explanation
 
-In setup() the code starts by initializing three dimmerLamp objects, each corresponding to a physical dimmer, the next step is to connect to WIFI with connectToWifi(), finishing out by setting up the MQTT connection over three functions
+`setup()`
+- Initializes three `dimmerLamp` objects, each of which corresponds to a physical dimmer
+- Runs `connectToWifi()`
+- Sets up the MQTT connection over three functions
 
-connectToWifi() loops until the network is connected, then prints "Connected to the WiFi network".
+`connectToWifi()` 
+- Loops until the network is connected, then prints "Connected to the WiFi network".
 
-connectToMQTTBroker() loops until the broker is connected, in this loop the "death message" is set to "Disconnected", the topics are subscribed to, and the message "Connected" is published.
+`connectToMQTTBroker()` 
+- Loops until the broker is connected
+- Sets the "death message" to "Disconnected"
+- Subscribes to topics 
+- Publishes the "Connected" message
 
-mqttCallback() handles the incoming messages, then based on the number sent, different mode functions are activated.
+`mqttCallback()` 
+- Handles the incoming messages, and activates the proper mode function based on the number sent 
 
-mode1() rapidly raises the brightness to 100 then lowers it to the variable twinkleMap (set to 55), making the lights "twinkle."
+`mode1()`
+- Rapidly raises the brightness to 100 then lowers it to the variable `twinkleMap` (set to 55), making the lights "twinkle."
 
-mode2() rapidly raises the brightness to 100 then lowers it to the variable flashMap (set to 30), making the lights "flash."
+`mode2()` 
+- Rapidly raises the brightness to 100 then lowers it to the variable `flashMap` (set to 30), making the lights "flash."
 
-loop() tries to reconnect to the server if the connection is lost, and loops through mqtt_client_loop()
+`loop()` 
+- Tries to reconnect to the server if the connection is lost
+- Loops through `mqtt_client_loop()`
 
